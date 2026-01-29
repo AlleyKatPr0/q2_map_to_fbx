@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T3D File Viewer - Enhanced</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            min-width: 300px;
+            max-width: 400px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #info-panel h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+
+        #info-panel h2 {
+            font-size: 16px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: #2196F3;
+        }
+
+        #info-panel p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+            color: #ccc;
+        }
+
+        #info-panel .section {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #info-panel .section:last-child {
+            border-bottom: none;
+        }
+
+        #drop-zone {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            padding: 60px 40px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px dashed #4CAF50;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        #drop-zone:hover {
+            border-color: #66BB6A;
+            background: rgba(0, 0, 0, 0.98);
+            transform: translate(-50%, -50%) scale(1.02);
+        }
+
+        #drop-zone.drag-over {
+            border-color: #FFC107;
+            background: rgba(255, 193, 7, 0.1);
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        #drop-zone h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+
+        #drop-zone p {
+            font-size: 16px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        #drop-zone .icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+
+        #drop-zone .features {
+            margin-top: 30px;
+            text-align: left;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        #drop-zone .features h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        #drop-zone .features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        #drop-zone .features li {
+            padding: 5px 0;
+            color: #888;
+            font-size: 13px;
+        }
+
+        #drop-zone .features li:before {
+            content: "✓ ";
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin: 5px;
+            font-weight: 500;
+        }
+
+        .button:hover {
+            background: #66BB6A;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button.secondary {
+            background: #2196F3;
+        }
+
+        .button.secondary:hover {
+            background: #42A5F5;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #controls h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+
+        #controls p {
+            font-size: 12px;
+            line-height: 1.8;
+            color: #ccc;
+            margin: 3px 0;
+        }
+
+        #controls .control-key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-right: 5px;
+        }
+
+        #stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            min-width: 200px;
+        }
+
+        .stat-line {
+            margin: 5px 0;
+            color: #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stat-label {
+            color: #888;
+        }
+
+        .stat-value {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        #selection-info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 350px;
+        }
+
+        #selection-info h3 {
+            color: #FFC107;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        #selection-info p {
+            font-size: 12px;
+            color: #ccc;
+            margin: 5px 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px 60px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #4CAF50;
+            z-index: 1001;
+        }
+
+        #loading h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        #loading-progress {
+            margin-top: 15px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 2000;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        #settings-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #4CAF50;
+            min-width: 400px;
+            z-index: 1500;
+        }
+
+        #settings-panel h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        .setting-item {
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .setting-item label {
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        .setting-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .setting-item input[type="range"] {
+            width: 200px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(76, 175, 80, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(76, 175, 80, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container"></div>
+
+        <div id="info-panel" class="hidden">
+            <div class="section">
+                <h1>T3D Viewer Enhanced</h1>
+                <p style="color: #888; font-size: 12px;">v2.0</p>
+            </div>
+
+            <div class="section">
+                <h2>📄 File Info</h2>
+                <p id="filename">No file loaded</p>
+                <p id="file-size">Size: 0 KB</p>
+            </div>
+
+            <div class="section">
+                <h2>📊 Statistics</h2>
+                <p>Actors: <span id="actor-count">0</span></p>
+                <p>Brushes: <span id="brush-count">0</span></p>
+                <p>Polygons: <span id="polygon-count">0</span></p>
+                <p>Vertices: <span id="vertex-count">0</span></p>
+                <p>Additive: <span id="additive-count" style="color: #4CAF50;">0</span></p>
+                <p>Subtractive: <span id="subtractive-count" style="color: #f44336;">0</span></p>
+            </div>
+
+            <div class="section">
+                <h2>🎮 Actions</h2>
+                <button class="button" onclick="loadNewFile()">Load New File</button>
+                <button class="button secondary" onclick="exportGeometry()">Export OBJ</button>
+                <button class="button secondary" onclick="toggleSettings()">Settings</button>
+            </div>
+        </div>
+
+        <div id="drop-zone">
+            <div class="icon">🎮</div>
+            <h2>T3D File Viewer</h2>
+            <p>Enhanced version with CSG support</p>
+            <p style="color: #666; margin-bottom: 20px;">Drag and drop a .t3d file here</p>
+            <button class="button" onclick="document.getElementById('file-input').click()">
+                📁 Browse Files
+            </button>
+            <input type="file" id="file-input" accept=".t3d,.txt" onchange="handleFileSelect(event)">
+            
+            <div class="features">
+                <h3>✨ Features</h3>
+                <ul>
+                    <li>BSP brush rendering</li>
+                    <li>CSG operations (additive/subtractive)</li>
+                    <li>Proper coordinate conversion</li>
+                    <li>Advanced polygon triangulation</li>
+                    <li>Click to select brushes</li>
+                    <li>Export to OBJ format</li>
+                    <li>Actor transforms applied</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <h2>Loading T3D file...</h2>
+            <p id="loading-progress">Parsing...</p>
+        </div>
+
+        <div id="settings-panel" class="hidden">
+            <h2>⚙️ Settings</h2>
+            
+            <div class="setting-item">
+                <label>Show Grid</label>
+                <input type="checkbox" id="setting-grid" checked onchange="toggleGrid()">
+            </div>
+            
+            <div class="setting-item">
+                <label>Show Axes</label>
+                <input type="checkbox" id="setting-axes" checked onchange="toggleAxes()">
+            </div>
+            
+            <div class="setting-item">
+                <label>Wireframe Mode</label>
+                <input type="checkbox" id="setting-wireframe" onchange="toggleWireframe()">
+            </div>
+            
+            <div class="setting-item">
+                <label>Show Subtractive Brushes</label>
+                <input type="checkbox" id="setting-subtractive" checked onchange="toggleSubtractive()">
+            </div>
+            
+            <div class="setting-item">
+                <label>Lighting Intensity</label>
+                <input type="range" id="setting-light" min="0" max="200" value="100" onchange="updateLighting(this.value)">
+            </div>
+            
+            <div class="setting-item">
+                <label>Camera FOV</label>
+                <input type="range" id="setting-fov" min="30" max="120" value="75" onchange="updateFOV(this.value)">
+            </div>
+            
+            <button class="button" onclick="toggleSettings()" style="margin-top: 20px;">Close</button>
+        </div>
+
+        <div id="controls" class="hidden">
+            <h3>🎮 Controls</h3>
+            <p><span class="control-key">Left Mouse</span> Rotate camera</p>
+            <p><span class="control-key">Right Mouse</span> Pan camera</p>
+            <p><span class="control-key">Wheel</span> Zoom in/out</p>
+            <p><span class="control-key">R</span> Reset camera</p>
+            <p><span class="control-key">W</span> Wireframe</p>
+            <p><span class="control-key">G</span> Toggle grid</p>
+            <p><span class="control-key">A</span> Toggle axes</p>
+            <p><span class="control-key">S</span> Settings</p>
+            <p><span class="control-key">Click</span> Select brush</p>
+        </div>
+
+        <div id="stats" class="hidden">
+            <div class="stat-line">
+                <span class="stat-label">FPS:</span>
+                <span class="stat-value" id="fps">60</span>
+            </div>
+            <div class="stat-line">
+                <span class="stat-label">Triangles:</span>
+                <span class="stat-value" id="triangles">0</span>
+            </div>
+            <div class="stat-line">
+                <span class="stat-label">Draw Calls:</span>
+                <span class="stat-value" id="drawcalls">0</span>
+            </div>
+            <div class="stat-line">
+                <span class="stat-label">Camera Z:</span>
+                <span class="stat-value" id="camera-pos">0</span>
+            </div>
+        </div>
+
+        <div id="selection-info" class="hidden">
+            <h3>🎯 Selected</h3>
+            <p><strong>Type:</strong> <span id="sel-type">-</span></p>
+            <p><strong>Actor:</strong> <span id="sel-actor">-</span></p>
+            <p><strong>CSG:</strong> <span id="sel-csg">-</span></p>
+            <p><strong>Polygons:</strong> <span id="sel-polygons">-</span></p>
+            <p><strong>Texture:</strong> <span id="sel-texture">-</span></p>
+            <button class="button" onclick="clearSelection()" style="margin-top: 10px; padding: 8px 16px; font-size: 12px;">Clear</button>
+        </div>
+
+        <div id="tooltip" class="tooltip"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let wireframeMode = false;
+        let gridHelper, axesHelper;
+        let mainGroup, additiveGroup, subtractiveGroup;
+        let raycaster, mouse;
+        let selectedObject = null;
+        let lights = {};
+        let stats = { fps: 0, triangles: 0, drawCalls: 0, lastTime: 0, frames: 0 };
+        let t3dData = null;
+        let meshToDataMap = new Map();
+        let currentFileName = ''; // Store filename for export
+
+        const UNREAL_SCALE = 1;
+        const DEG_TO_RAD = Math.PI / 180;
+
+        function initScene() {
+            const container = document.getElementById('canvas-container');
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+            scene.fog = new THREE.Fog(0x1a1a1a, 2000, 15000);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 50000);
+            camera.position.set(500, 500, 500);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.minDistance = 10;
+            controls.maxDistance = 20000;
+            controls.maxPolarAngle = Math.PI;
+
+            lights.ambient = new THREE.AmbientLight(0x404040, 1.5);
+            scene.add(lights.ambient);
+
+            lights.directional1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            lights.directional1.position.set(1000, 1000, 1000);
+            lights.directional1.castShadow = true;
+            scene.add(lights.directional1);
+
+            lights.directional2 = new THREE.DirectionalLight(0xffffff, 0.4);
+            lights.directional2.position.set(-1000, -500, -1000);
+            scene.add(lights.directional2);
+
+            lights.directional3 = new THREE.DirectionalLight(0x8888ff, 0.3);
+            lights.directional3.position.set(0, -1000, 0);
+            scene.add(lights.directional3);
+
+            gridHelper = new THREE.GridHelper(10000, 100, 0x444444, 0x222222);
+            scene.add(gridHelper);
+
+            axesHelper = new THREE.AxesHelper(1000);
+            scene.add(axesHelper);
+
+            mainGroup = new THREE.Group();
+            mainGroup.name = 'mainGroup';
+            scene.add(mainGroup);
+
+            additiveGroup = new THREE.Group();
+            additiveGroup.name = 'additiveGroup';
+            mainGroup.add(additiveGroup);
+
+            subtractiveGroup = new THREE.Group();
+            subtractiveGroup.name = 'subtractiveGroup';
+            mainGroup.add(subtractiveGroup);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('keydown', onKeyDown, false);
+            renderer.domElement.addEventListener('click', onMouseClick, false);
+            renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onKeyDown(event) {
+            switch(event.key.toLowerCase()) {
+                case 'r':
+                    resetCamera();
+                    break;
+                case 'w':
+                    document.getElementById('setting-wireframe').checked = !wireframeMode;
+                    toggleWireframe();
+                    break;
+                case 'g':
+                    document.getElementById('setting-grid').checked = !gridHelper.visible;
+                    toggleGrid();
+                    break;
+                case 'a':
+                    document.getElementById('setting-axes').checked = !axesHelper.visible;
+                    toggleAxes();
+                    break;
+                case 's':
+                    toggleSettings();
+                    break;
+                case 'escape':
+                    clearSelection();
+                    break;
+            }
+        }
+
+        function onMouseClick(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(mainGroup.children, true);
+
+            if (intersects.length > 0) {
+                selectObject(intersects[0].object);
+            } else {
+                clearSelection();
+            }
+        }
+
+        function onMouseMove(event) {
+        }
+
+        function selectObject(object) {
+            clearSelection();
+
+            let mesh = object;
+            while (mesh && !mesh.isMesh) {
+                mesh = mesh.parent;
+            }
+
+            if (!mesh || !meshToDataMap.has(mesh)) return;
+
+            selectedObject = mesh;
+            const data = meshToDataMap.get(mesh);
+
+            if (mesh.material.emissive) {
+                mesh.userData.originalEmissive = mesh.material.emissive.getHex();
+                mesh.material.emissive.setHex(0x444444);
+            }
+
+            document.getElementById('sel-type').textContent = data.actor.class || 'Unknown';
+            document.getElementById('sel-actor').textContent = data.actor.name || 'Unknown';
+            document.getElementById('sel-csg').textContent = data.csgOp || 'None';
+            document.getElementById('sel-polygons').textContent = data.polygonCount || 0;
+            document.getElementById('sel-texture').textContent = data.texture || 'None';
+            document.getElementById('selection-info').classList.remove('hidden');
+        }
+
+        function clearSelection() {
+            if (selectedObject) {
+                if (selectedObject.material.emissive && selectedObject.userData.originalEmissive !== undefined) {
+                    selectedObject.material.emissive.setHex(selectedObject.userData.originalEmissive);
+                }
+                selectedObject = null;
+            }
+            document.getElementById('selection-info').classList.add('hidden');
+        }
+
+        function resetCamera() {
+            if (mainGroup.children.length > 0) {
+                const box = new THREE.Box3().setFromObject(mainGroup);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                
+                controls.target.copy(center);
+                
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = camera.fov * (Math.PI / 180);
+                let cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
+                cameraZ *= 1.5;
+                
+                camera.position.set(
+                    center.x + cameraZ * 0.5,
+                    center.y + cameraZ * 0.5,
+                    center.z + cameraZ * 0.5
+                );
+            } else {
+                camera.position.set(500, 500, 500);
+                controls.target.set(0, 0, 0);
+            }
+            
+            camera.lookAt(controls.target);
+            camera.updateProjectionMatrix();
+        }
+
+        function toggleWireframe() {
+            wireframeMode = document.getElementById('setting-wireframe').checked;
+            mainGroup.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material.wireframe = wireframeMode;
+                }
+            });
+        }
+
+        function toggleGrid() {
+            gridHelper.visible = document.getElementById('setting-grid').checked;
+        }
+
+        function toggleAxes() {
+            axesHelper.visible = document.getElementById('setting-axes').checked;
+        }
+
+        function toggleSubtractive() {
+            const show = document.getElementById('setting-subtractive').checked;
+            subtractiveGroup.visible = show;
+        }
+
+        function toggleSettings() {
+            const panel = document.getElementById('settings-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function updateLighting(value) {
+            const intensity = value / 100;
+            lights.ambient.intensity = 1.5 * intensity;
+            lights.directional1.intensity = 0.8 * intensity;
+            lights.directional2.intensity = 0.4 * intensity;
+            lights.directional3.intensity = 0.3 * intensity;
+        }
+
+        function updateFOV(value) {
+            camera.fov = parseFloat(value);
+            camera.updateProjectionMatrix();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            controls.update();
+            renderer.render(scene, camera);
+
+            stats.frames++;
+            const time = performance.now();
+            if (time >= stats.lastTime + 1000) {
+                stats.fps = Math.round((stats.frames * 1000) / (time - stats.lastTime));
+                stats.frames = 0;
+                stats.lastTime = time;
+                document.getElementById('fps').textContent = stats.fps;
+            }
+
+            document.getElementById('camera-pos').textContent = Math.round(camera.position.length());
+            document.getElementById('drawcalls').textContent = renderer.info.render.calls;
+        }
+
+        class T3DParser {
+            constructor(content) {
+                this.content = content;
+                this.lines = content.split('\n').map(line => line.trim());
+                this.currentLine = 0;
+            }
+
+            parse() {
+                const data = {
+                    actors: [],
+                    brushes: 0,
+                    polygons: 0,
+                    vertices: 0,
+                    additive: 0,
+                    subtractive: 0
+                };
+
+                while (this.currentLine < this.lines.length) {
+                    const line = this.lines[this.currentLine];
+
+                    if (line.startsWith('Begin Actor')) {
+                        const actor = this.parseActor();
+                        if (actor) {
+                            data.actors.push(actor);
+                            data.brushes += actor.brushes.length;
+                        }
+                    }
+
+                    this.currentLine++;
+                }
+
+                data.actors.forEach(actor => {
+                    actor.brushes.forEach(brush => {
+                        data.polygons += brush.polygons.length;
+                        brush.polygons.forEach(poly => {
+                            data.vertices += poly.vertices.length;
+                        });
+                        
+                        if (brush.csgOp === 'CSG_Add' || !brush.csgOp) {
+                            data.additive++;
+                        } else if (brush.csgOp === 'CSG_Subtract') {
+                            data.subtractive++;
+                        }
+                    });
+                });
+
+                return data;
+            }
+
+            parseActor() {
+                const actor = {
+                    name: '',
+                    class: '',
+                    location: { x: 0, y: 0, z: 0 },
+                    rotation: { pitch: 0, yaw: 0, roll: 0 },
+                    scale: { x: 1, y: 1, z: 1 },
+                    brushes: []
+                };
+
+                const actorLine = this.lines[this.currentLine];
+                const nameMatch = actorLine.match(/Name=(\w+)/);
+                const classMatch = actorLine.match(/Class=(\w+)/);
+
+                if (nameMatch) actor.name = nameMatch[1];
+                if (classMatch) actor.class = classMatch[1];
+
+                this.currentLine++;
+
+                while (this.currentLine < this.lines.length) {
+                    const line = this.lines[this.currentLine];
+
+                    if (line.startsWith('End Actor')) {
+                        break;
+                    }
+
+                    if (line.includes('Location=')) {
+                        actor.location = this.parseVector(line) || actor.location;
+                    }
+
+                    if (line.includes('Rotation=')) {
+                        actor.rotation = this.parseRotation(line) || actor.rotation;
+                    }
+
+                    if (line.includes('DrawScale=')) {
+                        const scaleMatch = line.match(/DrawScale=([-\d.]+)/);
+                        if (scaleMatch) {
+                            const scale = parseFloat(scaleMatch[1]);
+                            actor.scale = { x: scale, y: scale, z: scale };
+                        }
+                    }
+
+                    if (line.startsWith('Begin Brush')) {
+                        const brush = this.parseBrush();
+                        if (brush) {
+                            actor.brushes.push(brush);
+                        }
+                    }
+
+                    this.currentLine++;
+                }
+
+                return actor;
+            }
+
+            parseBrush() {
+                const brush = {
+                    name: '',
+                    csgOp: 'CSG_Add',
+                    polygons: [],
+                    polyFlags: 0
+                };
+
+                const brushLine = this.lines[this.currentLine];
+                const nameMatch = brushLine.match(/Name=(\w+)/);
+                if (nameMatch) brush.name = nameMatch[1];
+
+                this.currentLine++;
+
+                while (this.currentLine < this.lines.length) {
+                    const line = this.lines[this.currentLine];
+
+                    if (line.startsWith('End Brush')) {
+                        break;
+                    }
+
+                    if (line.includes('CsgOper=')) {
+                        const csgMatch = line.match(/CsgOper=(\w+)/);
+                        if (csgMatch) brush.csgOp = csgMatch[1];
+                    }
+
+                    if (line.includes('PolyFlags=')) {
+                        const flagsMatch = line.match(/PolyFlags=(\d+)/);
+                        if (flagsMatch) brush.polyFlags = parseInt(flagsMatch[1]);
+                    }
+
+                    if (line.startsWith('Begin Polygon')) {
+                        const polygon = this.parsePolygon();
+                        if (polygon) {
+                            brush.polygons.push(polygon);
+                        }
+                    }
+
+                    this.currentLine++;
+                }
+
+                return brush;
+            }
+
+            parsePolygon() {
+                const polygon = {
+                    texture: '',
+                    origin: null,
+                    normal: null,
+                    textureU: null,
+                    textureV: null,
+                    vertices: [],
+                    flags: 0
+                };
+
+                const polygonLine = this.lines[this.currentLine];
+                const textureMatch = polygonLine.match(/Texture=(\w+)/);
+                const flagsMatch = polygonLine.match(/Flags=(\d+)/);
+                
+                if (textureMatch) polygon.texture = textureMatch[1];
+                if (flagsMatch) polygon.flags = parseInt(flagsMatch[1]);
+
+                this.currentLine++;
+
+                while (this.currentLine < this.lines.length) {
+                    const line = this.lines[this.currentLine];
+
+                    if (line.startsWith('End Polygon')) {
+                        break;
+                    }
+
+                    if (line.trim().startsWith('Origin')) {
+                        polygon.origin = this.parseVectorLine(line);
+                    } else if (line.trim().startsWith('Normal')) {
+                        polygon.normal = this.parseVectorLine(line);
+                    } else if (line.trim().startsWith('TextureU')) {
+                        polygon.textureU = this.parseVectorLine(line);
+                    } else if (line.trim().startsWith('TextureV')) {
+                        polygon.textureV = this.parseVectorLine(line);
+                    } else if (line.trim().startsWith('Vertex')) {
+                        const vertex = this.parseVectorLine(line);
+                        if (vertex) {
+                            polygon.vertices.push(vertex);
+                        }
+                    }
+
+                    this.currentLine++;
+                }
+
+                return polygon;
+            }
+
+            parseVector(line) {
+                const match = line.match(/\(X=([-\d.]+),Y=([-\d.]+),Z=([-\d.]+)\)/);
+                if (match) {
+                    return {
+                        x: parseFloat(match[1]),
+                        y: parseFloat(match[2]),
+                        z: parseFloat(match[3])
+                    };
+                }
+                return null;
+            }
+
+            parseVectorLine(line) {
+                const match = line.match(/([-+\d.]+),([-+\d.]+),([-+\d.]+)/);
+                if (match) {
+                    return {
+                        x: parseFloat(match[1]),
+                        y: parseFloat(match[2]),
+                        z: parseFloat(match[3])
+                    };
+                }
+                return null;
+            }
+
+            parseRotation(line) {
+                const match = line.match(/\(Pitch=([-\d]+),Yaw=([-\d]+),Roll=([-\d]+)\)/);
+                if (match) {
+                    return {
+                        pitch: parseInt(match[1]),
+                        yaw: parseInt(match[2]),
+                        roll: parseInt(match[3])
+                    };
+                }
+                return null;
+            }
+        }
+
+        function triangulatePolygon(vertices) {
+            if (vertices.length < 3) return [];
+            if (vertices.length === 3) return [vertices];
+
+            const triangles = [];
+            const remaining = [...vertices];
+
+            while (remaining.length > 3) {
+                let earFound = false;
+
+                for (let i = 0; i < remaining.length; i++) {
+                    const prev = remaining[(i - 1 + remaining.length) % remaining.length];
+                    const curr = remaining[i];
+                    const next = remaining[(i + 1) % remaining.length];
+
+                    if (isEar(prev, curr, next, remaining)) {
+                        triangles.push([prev, curr, next]);
+                        remaining.splice(i, 1);
+                        earFound = true;
+                        break;
+                    }
+                }
+
+                if (!earFound) {
+                    for (let i = 1; i < remaining.length - 1; i++) {
+                        triangles.push([remaining[0], remaining[i], remaining[i + 1]]);
+                    }
+                    break;
+                }
+            }
+
+            if (remaining.length === 3) {
+                triangles.push(remaining);
+            }
+
+            return triangles;
+        }
+
+        function isEar(prev, curr, next, polygon) {
+            const cross = (next.x - curr.x) * (prev.y - curr.y) - (next.y - curr.y) * (prev.x - curr.x);
+            if (cross <= 0) return false;
+
+            for (let p of polygon) {
+                if (p === prev || p === curr || p === next) continue;
+                if (pointInTriangle(p, prev, curr, next)) return false;
+            }
+
+            return true;
+        }
+
+        function pointInTriangle(p, a, b, c) {
+            const v0x = c.x - a.x;
+            const v0y = c.y - a.y;
+            const v1x = b.x - a.x;
+            const v1y = b.y - a.y;
+            const v2x = p.x - a.x;
+            const v2y = p.y - a.y;
+
+            const dot00 = v0x * v0x + v0y * v0y;
+            const dot01 = v0x * v1x + v0y * v1y;
+            const dot02 = v0x * v2x + v0y * v2y;
+            const dot11 = v1x * v1x + v1y * v1y;
+            const dot12 = v1x * v2x + v1y * v2y;
+
+            const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+            const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+            return (u >= 0) && (v >= 0) && (u + v < 1);
+        }
+
+        function unrealToThreeJS(vec) {
+            return new THREE.Vector3(
+                vec.x * UNREAL_SCALE,
+                vec.z * UNREAL_SCALE,
+                -vec.y * UNREAL_SCALE
+            );
+        }
+
+        function unrealRotationToThreeJS(rot) {
+            const UNREAL_ROTATION_TO_RAD = (2 * Math.PI) / 65536;
+            
+            return new THREE.Euler(
+                rot.pitch * UNREAL_ROTATION_TO_RAD,
+                rot.roll * UNREAL_ROTATION_TO_RAD,
+                rot.yaw * UNREAL_ROTATION_TO_RAD,
+                'YXZ'
+            );
+        }
+
+        function createGeometryFromT3D(data) {
+            meshToDataMap.clear();
+            while(additiveGroup.children.length > 0) {
+                additiveGroup.remove(additiveGroup.children[0]);
+            }
+            while(subtractiveGroup.children.length > 0) {
+                subtractiveGroup.remove(subtractiveGroup.children[0]);
+            }
+
+            let totalPolygons = 0;
+            let totalVertices = 0;
+            let totalTriangles = 0;
+
+            const colorMap = new Map();
+            function getColorForTexture(texture) {
+                if (!colorMap.has(texture)) {
+                    const hue = Math.random();
+                    const color = new THREE.Color().setHSL(hue, 0.7, 0.6);
+                    colorMap.set(texture, color);
+                }
+                return colorMap.get(texture);
+            }
+
+            data.actors.forEach((actor) => {
+                actor.brushes.forEach((brush) => {
+                    const isSubtractive = brush.csgOp === 'CSG_Subtract';
+                    const targetGroup = isSubtractive ? subtractiveGroup : additiveGroup;
+                    
+                    const brushGroup = new THREE.Group();
+                    brushGroup.name = brush.name || 'Brush';
+
+                    let brushPolygonCount = 0;
+                    let brushTexture = '';
+
+                    brush.polygons.forEach((polygon) => {
+                        if (polygon.vertices.length < 3) return;
+
+                        totalPolygons++;
+                        brushPolygonCount++;
+                        totalVertices += polygon.vertices.length;
+                        
+                        if (!brushTexture && polygon.texture) {
+                            brushTexture = polygon.texture;
+                        }
+
+                        const convertedVertices = polygon.vertices.map(v => unrealToThreeJS(v));
+                        const triangles = triangulatePolygon(polygon.vertices);
+                        
+                        triangles.forEach(tri => {
+                            const geometry = new THREE.BufferGeometry();
+                            const positions = [];
+
+                            const v0 = unrealToThreeJS(tri[0]);
+                            const v1 = unrealToThreeJS(tri[1]);
+                            const v2 = unrealToThreeJS(tri[2]);
+
+                            positions.push(v0.x, v0.y, v0.z);
+                            positions.push(v1.x, v1.y, v1.z);
+                            positions.push(v2.x, v2.y, v2.z);
+
+                            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                            geometry.computeVertexNormals();
+
+                            totalTriangles++;
+
+                            const color = getColorForTexture(polygon.texture);
+                            const materialProps = {
+                                color: color,
+                                side: THREE.DoubleSide,
+                                flatShading: false,
+                                shininess: 30
+                            };
+
+                            if (isSubtractive) {
+                                materialProps.transparent = true;
+                                materialProps.opacity = 0.3;
+                                materialProps.color = new THREE.Color(0xff4444);
+                            }
+
+                            const material = new THREE.MeshPhongMaterial(materialProps);
+                            const mesh = new THREE.Mesh(geometry, material);
+                            
+                            meshToDataMap.set(mesh, {
+                                actor: actor,
+                                brush: brush,
+                                polygon: polygon,
+                                csgOp: brush.csgOp,
+                                polygonCount: brushPolygonCount,
+                                texture: polygon.texture
+                            });
+
+                            brushGroup.add(mesh);
+                        });
+                    });
+
+                    if (actor.location) {
+                        const pos = unrealToThreeJS(actor.location);
+                        brushGroup.position.copy(pos);
+                    }
+
+                    if (actor.rotation) {
+                        const rot = unrealRotationToThreeJS(actor.rotation);
+                        brushGroup.rotation.copy(rot);
+                    }
+
+                    if (actor.scale) {
+                        brushGroup.scale.set(actor.scale.x, actor.scale.z, actor.scale.y);
+                    }
+
+                    targetGroup.add(brushGroup);
+                });
+            });
+
+            stats.triangles = totalTriangles;
+            document.getElementById('triangles').textContent = totalTriangles;
+
+            resetCamera();
+
+            return {
+                actors: data.actors.length,
+                brushes: data.actors.reduce((sum, a) => sum + a.brushes.length, 0),
+                polygons: totalPolygons,
+                vertices: totalVertices,
+                additive: data.additive,
+                subtractive: data.subtractive
+            };
+        }
+
+        function exportGeometry() {
+            if (!t3dData) {
+                alert('No geometry loaded to export');
+                return;
+            }
+
+            let outputFilename = 'exported_geometry.obj';
+            
+            if (currentFileName) {
+                const nameWithoutExt = currentFileName.replace(/\.[^/.]+$/, '');
+                outputFilename = `${nameWithoutExt}_exported.obj`;
+            }
+
+            let objContent = '# Exported from T3D Viewer Enhanced\n';
+            objContent += `# Source file: ${currentFileName || 'unknown'}\n`;
+            objContent += `# Export date: ${new Date().toISOString()}\n`;
+            objContent += '# https://github.com/notepad-plus-plus/nppPluginList\n\n';
+            
+            let vertexOffset = 1;
+            const groups = [additiveGroup, subtractiveGroup];
+
+            groups.forEach((group, groupIdx) => {
+                const groupName = groupIdx === 0 ? 'Additive' : 'Subtractive';
+                objContent += `g ${groupName}\n`;
+
+                group.traverse((child) => {
+                    if (child.isMesh) {
+                        const geometry = child.geometry;
+                        const position = geometry.attributes.position;
+                        
+                        for (let i = 0; i < position.count; i++) {
+                            const vertex = new THREE.Vector3();
+                            vertex.fromBufferAttribute(position, i);
+                            child.localToWorld(vertex);
+                            objContent += `v ${vertex.x} ${vertex.y} ${vertex.z}\n`;
+                        }
+
+                        for (let i = 0; i < position.count; i += 3) {
+                            objContent += `f ${vertexOffset + i} ${vertexOffset + i + 1} ${vertexOffset + i + 2}\n`;
+                        }
+
+                        vertexOffset += position.count;
+                    }
+                });
+            });
+
+            const blob = new Blob([objContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = outputFilename;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            console.log(`Exported to: ${outputFilename}`);
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                loadFile(file);
+            }
+        }
+
+        function loadFile(file) {
+            currentFileName = file.name;
+            
+            document.getElementById('drop-zone').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('loading-progress').textContent = 'Reading file...';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    document.getElementById('loading-progress').textContent = 'Parsing T3D data...';
+                    
+                    const content = e.target.result;
+                    const parser = new T3DParser(content);
+                    t3dData = parser.parse();
+                    
+                    document.getElementById('loading-progress').textContent = 'Creating geometry...';
+                    
+                    setTimeout(() => {
+                        const stats = createGeometryFromT3D(t3dData);
+                        
+                        document.getElementById('filename').textContent = file.name;
+                        document.getElementById('file-size').textContent = `Size: ${(file.size / 1024).toFixed(2)} KB`;
+                        document.getElementById('actor-count').textContent = stats.actors;
+                        document.getElementById('brush-count').textContent = stats.brushes;
+                        document.getElementById('polygon-count').textContent = stats.polygons;
+                        document.getElementById('vertex-count').textContent = stats.vertices;
+                        document.getElementById('additive-count').textContent = stats.additive;
+                        document.getElementById('subtractive-count').textContent = stats.subtractive;
+                        
+                        document.getElementById('loading').classList.add('hidden');
+                        document.getElementById('info-panel').classList.remove('hidden');
+                        document.getElementById('controls').classList.remove('hidden');
+                        document.getElementById('stats').classList.remove('hidden');
+                    }, 100);
+                } catch (error) {
+                    alert('Error parsing T3D file: ' + error.message);
+                    console.error('Parse error:', error);
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('drop-zone').classList.remove('hidden');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function loadNewFile() {
+            clearSelection();
+            currentFileName = '';
+            
+            document.getElementById('info-panel').classList.add('hidden');
+            document.getElementById('controls').classList.add('hidden');
+            document.getElementById('stats').classList.add('hidden');
+            document.getElementById('selection-info').classList.add('hidden');
+            document.getElementById('drop-zone').classList.remove('hidden');
+            document.getElementById('file-input').value = '';
+            
+            meshToDataMap.clear();
+            while(additiveGroup.children.length > 0) {
+                additiveGroup.remove(additiveGroup.children[0]);
+            }
+            while(subtractiveGroup.children.length > 0) {
+                subtractiveGroup.remove(subtractiveGroup.children[0]);
+            }
+            
+            t3dData = null;
+        }
+
+        const dropZone = document.getElementById('drop-zone');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('drag-over');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('drag-over');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                loadFile(files[0]);
+            }
+        });
+
+        window.addEventListener('load', () => {
+            initScene();
+        });
+    </script>
+</body>
+</html>
