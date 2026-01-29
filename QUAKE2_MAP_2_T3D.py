@@ -2,11 +2,11 @@
 """
 ╔═══════════════════════════════════════════════════════════════════════════╗
 ║                                                                           ║
-║   QUAKE 2 MAP TO UNREAL ENGINE 5 T3D CONVERTER                           ║
-║   THE ULTIMATE EDITION v2.2 FIXED                                        ║
+║   QUAKE 2 MAP TO UNREAL ENGINE 5 T3D CONVERTER                            ║
+║   THE ULTIMATE EDITION v2.2                                               ║
 ║                                                                           ║
-║   Convert Quake 2 .MAP files to Unreal Engine 5 .T3D format             ║
-║   with perfect geometry, proper winding, and clean actor organization    ║
+║   Convert Quake 2 .MAP files to Unreal Engine 5 .T3D format               ║
+║   with perfect geometry, proper winding, and clean actor organization     ║
 ║                                                                           ║
 ║   Created by AlleyKatPr0 — Level Design & Mapping Specialist              ║
 ║                                                                           ║
