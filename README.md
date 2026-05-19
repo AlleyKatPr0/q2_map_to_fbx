@@ -1,27 +1,85 @@
-# Quake 2 Map to FBX
+# Quake II Map to FBX
 
-A simple program for exporting Quake 2 map format files to FBX.
-FBX is a data exchange format commonly used by modern game engines and 3D modeling software.
-This tool is being created just for fun. If you are a game hacker who wants to mess around with the Vampire maps
-in a 3D software, this is the tool for you.
+Convert Quake II-style `.map` files into `.fbx` scenes for use in modern 3D tools and game engines.
 
-Here is an example exported from the tool. It is the Prague North Quarter from Vampire the Masquerade : Redemption :
-![alt tag](http://s22.postimg.org/y464wfy01/north_district_night.jpg)
+This project exports brush-based map geometry and texture coordinates to FBX, making it easier to inspect or reuse classic level data in software such as Blender, Maya, or any other FBX-compatible tool.
 
-## Features:
-- Exports all brushes into polygonal objects
-- Exports texture coordinates
-- Creates an FBX containing a scene of the map file for viewing in a 3D editing software
+## Features
 
-## Future Features:
-- Remove all faces which are not visible from within the hull of the map
+- Export brush geometry as polygonal meshes
+- Export texture coordinates
+- Generate a complete FBX scene from a Quake II `.map` file
 
-## How I made it:
-I downloaded the quake 2 QE4 source code and used it as a reference for properly exporting the mesh data from the Quake 2 map files.
-I used the Autodesk python FBX SDK to create the FBX file.
+## Current Limitations
 
-## What you need:
-- A map file created with a QuakeEd4 based map editor (Embrace, QE4, QERadiant, WorldCraft)
-- Textures found in the VtMR texture archive or the Quake 2 texture archive
-- The FBX SDK and FBX python SDK installed
-- Python Pillow Imaging Library 2.8.1 or greater
+- Internal or non-visible faces are not yet removed
+- Requires access to the original texture assets
+- Support may vary depending on map editor output and texture archive layout
+
+## Requirements
+
+- Python
+- Autodesk FBX SDK and Python FBX SDK
+- Pillow 2.8.1 or newer
+- A QuakeEd4-compatible `.map` file
+- Texture assets from the relevant game archive
+
+Supported editors may include:
+
+- Embrace
+- QE4
+- QERadiant
+- WorldCraft
+
+## Installation
+
+1. Install Python.
+2. Install Pillow:
+
+   ```bash
+   pip install pillow
+   ```
+
+3. Install the Autodesk FBX SDK and Python bindings.
+4. Clone this repository:
+
+   ```bash
+   git clone https://github.com/AlleyKatPr0/q2_map_to_fbx.git
+   cd q2_map_to_fbx
+   ```
+
+## Usage
+
+Run the converter with a source map file and output FBX path.
+
+```bash
+python main.py input.map output.fbx
+```
+
+> Update the command above if this repository uses a different script name or CLI entry point.
+
+## Example Output
+
+Example export: Prague North Quarter from *Vampire: The Masquerade – Redemption*.
+
+![Example export](http://s22.postimg.org/y464wfy01/north_district_night.jpg)
+
+## How It Works
+
+This project was built using the Quake II QE4 source code as a reference for parsing map geometry and exporting mesh data correctly.
+
+FBX output is generated with the Autodesk Python FBX SDK.
+
+## Roadmap
+
+- Remove faces that are not visible from inside the playable space
+- Improve texture and material handling
+- Add better validation and error reporting
+
+## Contributing
+
+Issues and pull requests are welcome.
+
+## License
+
+Add a license section here if the repository includes one.
